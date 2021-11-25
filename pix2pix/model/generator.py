@@ -3,7 +3,7 @@ import tensorflow as tf
 from pix2pix.utils.utils import Reflection_Pad
 from pix2pix.utils.generator_utils import Conv_Encoder_Block, Conv_Decoder_Block
 
-class Generator(tf.keras.layers.Layer):
+class Generator(tf.keras.Model):
     def __init__(self,filters=64, 
                  bn=True,
                  relu=False,
@@ -16,10 +16,15 @@ class Generator(tf.keras.layers.Layer):
         self.relu = relu
         self.tanh = tanh
         self.dropout = dropout 
-        self.model_output =  Conv_Decoder_Block(3,
-                                                False,
-                                                self.dropout,
-                                                True)
+        self.conv_layer = tf.keras.layers.Conv2DTranspose(3, 
+                                                          4, 
+                                                          2,
+                                                          padding='same',
+                                                          use_bias=False,
+                                                          activation="tanh")
+        self.encoder_block = self.make_encoder_block()
+        self.decoder_block = self.make_decoder_block()
+
     def make_encoder_block(self):
         label = []
         label.append(Conv_Encoder_Block(self.filters, 
@@ -60,22 +65,24 @@ class Generator(tf.keras.layers.Layer):
         return label
 
     
-    def call(self, x, training=None):
-        encoder_block = self.make_encoder_block()
-        decoder_block = self.make_decoder_block()
-
-        reverse_encode = []
-        for encode in encoder_block:
-            encode = tf.keras.Sequential(encode)
-            x = encode(x)
-            reverse_encode.append(x)
-
-        reverse_encoder = reversed(reverse_encode[:-1])
+    def call(self, x, training):
+        x1 = self.encoder_block[0](x)
+        x2 = self.encoder_block[1](x1)
+        x3 = self.encoder_block[2](x2)
+        x4 = self.encoder_block[3](x3)
+        x5 = self.encoder_block[4](x4)
+        x6 = self.encoder_block[5](x5)
+        x7 = self.encoder_block[6](x6)
         
-        for encode, decode in zip(decoder_block, reverse_encoder):
-            encode = tf.keras.Sequential(encode)
-            x = encode(x)
-            x = tf.keras.layers.Concatenate()([x, decode])
+        backbone = self.encoder_block[7](x7)
     
-        x = self.model_output(x)
-        return x
+        x8 = self.decoder_block[0](backbone, x7)
+        x9 = self.decoder_block[1](x8, x6)
+        x10 = self.decoder_block[2](x9, x5)
+        x11 = self.decoder_block[3](x10, x4)
+        x12 = self.decoder_block[4](x11, x3)
+        x13 = self.decoder_block[5](x12, x2)
+        x14 = self.decoder_block[6](x13, x1)
+        x15 = self.conv_layer(x14)
+        
+        return x15
