@@ -1,13 +1,25 @@
+import os
+import numpy as np
 import tensorflow as tf
 
-from pix2pix.utils.utils import train_preprocess_image, test_preprocess_image
+class DataGenerator(tf.keras.utils.Sequence):
+    def __init__(self, data_path, 
+                 mode = "train", 
+                 batch_size=8, 
+                 dim=(256, 256), 
+                 n_channels=3, 
+                 shuffle=True, 
+                 resize_dim=(286, 286)
+        ):
+        self.dim = dim
+        self.mode = mode
+        self.shuffle = shuffle
+        self.n_channels = n_channels
+        self.batch_size = batch_size
+        self.resize_dim = resize_dim  
+        self.data_path = data_path
+        self.data =  os.listdir(data_path)
+        self.on_epoch_end()
 
-def data_generator(path, batch_size, mode="train"):
-    dataset = tf.data.Dataset.list_files(path,tf.data.experimental.AUTOTUNE)
-    preprocess = train_preprocess_image if mode == "train" else test_preprocess_image
-    dataset = dataset.map(preprocess,tf.data.experimental.AUTOTUNE)
-    dataset = dataset.batch(batch_size, drop_remainder=True)
-    dataset.repeat()
-    dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-    return dataset
-
+    def __len__(self):
+        return int(np.ceil(len(self.data) / self.batch_size))
