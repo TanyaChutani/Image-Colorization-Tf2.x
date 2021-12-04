@@ -52,4 +52,8 @@ class PIX2PIX(tf.keras.models.Model):
         return {"generator_loss": final_gen_loss,
                 "discriminator_loss": discriminator_loss}
     
-    
+     
+    def call(self, input_image):
+        op = self.generator_model(input_image, training=False)
+        return op
+
