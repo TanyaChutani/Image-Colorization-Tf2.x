@@ -34,3 +34,19 @@ def parse_args():
                         default = '/pix2pix_tf/weights/')
     args = parser.parse_args()
     return args
+
+def main():
+    args = parse_args()
+    gen = DataGenerator(data_path=args.train_path)
+    train_dataset = tf.data.Dataset.from_generator(gen, output_types = (tf.float32, tf.float32), output_shapes=([256, 256, 3], [256, 256, 3]))
+    train_dataset = train_dataset.batch(args.batch_size)
+    learning_rate = tf.optimizers.schedules.PiecewiseConstantDecay(boundaries=[args.epochs / 2], values=[0.0001, 0.00001])
+    model = PIX2PIX()
+    callbacks = [tf.keras.callbacks.ModelCheckpoint(args.gan_weights_path,monitor='loss',save_best_only=False,save_weights_only=True, mode='auto')]
+    model.compile(generator_optimizer = tf.keras.optimizers.Adam(learning_rate),
+                  discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate),
+                   loss = tf.keras.losses.MeanAbsoluteError())
+    model.fit(train_dataset,epochs=(args.epochs))
+    
+if __name__ == "__main__":
+    main()
