@@ -1,11 +1,12 @@
-import tensorflow as tf
-import argparse
 import sys
+import argparse
+import tensorflow as tf
 
+from pix2pix.loss.metric import psnr
+from pix2pix.model.pix2pix import PIX2PIX
 from pix2pix.model.generator import Generator
 from pix2pix.model.discriminator import Discriminator
-from pix2pix.model.pix2pix import PIX2PIX
-from pix2pix.data.data_generator import data_generator
+from pix2pix.data.data_generator import DataGenerator
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -37,16 +38,36 @@ def parse_args():
 
 def main():
     args = parse_args()
-    gen = DataGenerator(data_path=args.train_path)
-    train_dataset = tf.data.Dataset.from_generator(gen, output_types = (tf.float32, tf.float32), output_shapes=([256, 256, 3], [256, 256, 3]))
+    train_gen = DataGenerator(data_path=args.train_path)
+    val_gen = DataGenerator(data_path=args.val_path)
+
+    train_dataset = tf.data.Dataset.from_generator(train_gen,
+                                                   output_types = (tf.float32, tf.float32),
+                                                   output_shapes=([256, 256, 3], [256, 256, 3]))
     train_dataset = train_dataset.batch(args.batch_size)
-    learning_rate = tf.optimizers.schedules.PiecewiseConstantDecay(boundaries=[args.epochs / 2], values=[0.0001, 0.00001])
+    
+    val_dataset = tf.data.Dataset.from_generator(val_gen, 
+                                                 output_types = (tf.float32, tf.float32),
+                                                 output_shapes=([256, 256, 3], [256, 256, 3]))
+    val_dataset = val_dataset.batch(args.batch_size)
+    
+    learning_rate = tf.optimizers.schedules.PiecewiseConstantDecay(boundaries=[args.epochs / 2],
+                                                                   values=[0.0001, 0.00001])
+    callbacks = [tf.keras.callbacks.ModelCheckpoint(args.gan_weights_path,
+                                                    monitor='loss',
+                                                    save_best_only=False,
+                                                    save_weights_only=True, 
+                                                    mode='auto')]
     model = PIX2PIX()
-    callbacks = [tf.keras.callbacks.ModelCheckpoint(args.gan_weights_path,monitor='loss',save_best_only=False,save_weights_only=True, mode='auto')]
+    
+    
     model.compile(generator_optimizer = tf.keras.optimizers.Adam(learning_rate),
                   discriminator_optimizer = tf.keras.optimizers.Adam(learning_rate),
-                   loss = tf.keras.losses.MeanAbsoluteError())
-    model.fit(train_dataset,epochs=(args.epochs))
+                  loss = tf.keras.losses.MeanAbsoluteError(),
+                  metric=psnr)
+    model.fit(train_dataset,
+              epochs=(args.epochs),
+              validation_data=val_dataset)
     
 if __name__ == "__main__":
     main()
