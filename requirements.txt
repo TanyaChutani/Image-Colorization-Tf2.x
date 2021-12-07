@@ -1,3 +1,5 @@
+os
+numpy
 tensorflow
 argparse
 matplotlib
