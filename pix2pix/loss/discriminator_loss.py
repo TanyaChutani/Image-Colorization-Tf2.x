@@ -2,7 +2,7 @@ import tensorflow as tf
 
 class Discriminator_Loss(tf.keras.losses.Loss):
     def __init__(self,**kwargs):
-        super(Generator_Loss,self).__init__()
+        super(Discriminator_Loss,self).__init__()
         self.mse_loss = tf.keras.losses.MeanSquaredError()
 
     def call(self, disc_true, disc_op):
