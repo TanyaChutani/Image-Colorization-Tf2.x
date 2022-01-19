@@ -19,17 +19,20 @@ class DataGenerator:
         self.shuffle = shuffle
         self.n_channels = n_channels
         self.data = os.listdir((os.path.join(self.data_path, self.mode)))
-        self.index = np.arange(len(self.data))
-        if self.shuffle == True:
-            np.random.shuffle(self.index)
+        self.on_epoch_end()
 
     def __len__(self):
-        return np.ceil(len(self.data) / self.batch_size)
+        return int(np.ceil(len(self.data) / self.batch_size))
 
     def __call__(self):
         for i in self.index:
             x, y = self.load(os.path.join(self.data_path, self.mode, self.data[i]))
             yield x, y
+
+    def on_epoch_end(self):
+        self.index = np.arange(len(self.data))
+        if self.shuffle == True:
+            np.random.shuffle(self.index)
 
     def preprocess(self, image):
         if self.mode == "train":
