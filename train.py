@@ -14,7 +14,7 @@ def parse_args():
 
     parser.add_argument("-b", "--batch_size", type=int, metavar="", default=16)
 
-    parser.add_argument("-ip_size", "--input_size", type=int, metavar="", default=512)
+    parser.add_argument("-ip_size", "--input_size", type=int, metavar="", default=1024)
 
     parser.add_argument(
         "-img_dir",
@@ -30,6 +30,13 @@ def parse_args():
         type=str,
         metavar="",
         default="/home/ubuntu/pix2pix_tf/weights/",
+    )
+    parser.add_argument(
+        "-gen_w",
+        "--generator_weights_path",
+        type=str,
+        metavar="",
+        default="/home/ubuntu/pix2pix_tf/gen_weights/",
     )
     args = parser.parse_args()
     return args
@@ -60,6 +67,7 @@ def main():
     )
     train_dataset = train_dataset.batch(args.batch_size)
     train_dataset = train_dataset.repeat()
+    
     val_dataset = tf.data.Dataset.from_generator(
         val_gen,
         output_types=(tf.float32, tf.float32),
@@ -70,6 +78,7 @@ def main():
     )
     val_dataset = val_dataset.batch(args.batch_size)
     val_dataset = val_dataset.repeat()
+    
     learning_rate = tf.optimizers.schedules.PiecewiseConstantDecay(
         boundaries=[args.epochs / 2], values=[0.0001, 0.00001]
     )
@@ -97,6 +106,7 @@ def main():
         validation_steps=val_gen.__len__(),
         callbacks=callbacks,
     )
+    model.generator_model.save_weights(args.generator_weights_path)
 
 
 if __name__ == "__main__":
