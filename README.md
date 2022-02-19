@@ -29,7 +29,7 @@ python train.py --epochs 100 --batch_size 16 --input_size 1024 --data_path pix2p
 
 Checkout our ` pix2pix_inference.ipynb` notebook, in order to get a gist of testing and inferencing. 
 
-## Resuls
+## Results
 
 ![](https://raw.githubusercontent.com/TanyaChutani/Image-Colorization-Tf2.x/main/results/op_0802.png)
 ![](https://raw.githubusercontent.com/TanyaChutani/Image-Colorization-Tf2.x/main/results/op_0807.png)
